@@ -6,6 +6,7 @@ namespace Mdnr\Meilisearch\Framework;
 
 use MeiliSearch\Client;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 
 class MeilisearchHelper
 {
@@ -15,7 +16,6 @@ class MeilisearchHelper
   {
     $this->systemConfigService = $systemConfigService;
   }
-
 
   public function getClient(): Client
   {
@@ -34,5 +34,10 @@ class MeilisearchHelper
   public function getPrefix(): string
   {
     return $this->systemConfigService->get('Meilisearch.config.prefix');
+  }
+
+  public function getIndexName(EntityDefinition $definition, string $languageId): string
+  {
+    return $this->prefix . '_' . $definition->getEntityName() . '_' . $languageId;
   }
 }

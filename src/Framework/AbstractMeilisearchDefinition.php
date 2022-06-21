@@ -9,5 +9,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 abstract class AbstractMeilisearchDefinition
 {
   abstract public function getEntityDefinition(): EntityDefinition;
-
+  abstract public function getId(): string;
+  abstract public function getSearchableAttributes(): array;
+  abstract public function getFilterableAttributes(): array;
+  abstract public function getSortableAttributes(): array;
 }
