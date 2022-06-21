@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+  <card>
+    <title>Setup MeiliSearch</title>
+    <input-field type="bool">
+      <name>enabled</name>
+      <label>Enabled</label>
+      <required>true</required>
+    </input-field>
+
+    <input-field type="text">
+      <name>urlEndpoint</name>
+      <label>Meilisearch url endpoint</label>
+      <required>true</required>
+    </input-field>
+
+    <input-field type="text">
+      <name>prefix</name>
+      <label>Index prefix</label>
+      <helpText>For e.g. "sw_" - use if running multiple shops on single instance</helpText>
+      <required>false</required>
+    </input-field>
+
+    <input-field type="password">
+      <name>masterKey</name>
+      <label>masterKey</label>
+      <required>true</required>
+    </input-field>
+
+  </card>
+</config>

@@ -1,0 +1,31 @@
+{
+    "name": "madonair/meilisearch",
+    "version": "1.0.0",
+    "description": "Meilisearch integration",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mdnr\\Meilisearch\\": "src/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Mdnr\\Meilisearch\\Meilisearch",
+        "label": {
+            "de-DE": "Meilisearch",
+            "en-GB": "Meilisearch"
+        },
+        "description": {
+            "de-DE": "Meilisearch",
+            "en-GB": "Meilisearch integration for Shopware 6"
+        },
+        "manufacturerLink": {
+            "de-DE": "https://example.com",
+            "en-GB": "https://example.com"
+        },
+        "supportLink": {
+            "de-DE": "https://example.com/support",
+            "en-GB": "https://example.com/support"
+        }
+    }
+}
