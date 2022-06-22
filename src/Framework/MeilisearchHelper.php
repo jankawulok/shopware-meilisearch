@@ -38,6 +38,6 @@ class MeilisearchHelper
 
   public function getIndexName(EntityDefinition $definition, string $languageId): string
   {
-    return $this->prefix . '_' . $definition->getEntityName() . '_' . $languageId;
+    return $this->getPrefix() . '_' . $definition->getEntityName() . '_' . $languageId;
   }
 }
