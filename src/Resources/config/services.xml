@@ -6,7 +6,7 @@
   <services>
 
     <!-- Services -->
-    <service id="Mdnr\Meilisearch\Framework\ClientFactory" public="true">
+    <service id="Mdnr\Meilisearch\Framework\ClientFactory" public="true" lazy="true">
       <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
     </service>
     <service id="MeiliSearch\Client" public="true" lazy="true">
