@@ -19,7 +19,7 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
 
   public function getId(): string
   {
-    return $this->definition->getPrimaryKeys()[0];
+    return 'id';
   }
 
   public function getEntityDefinition(): EntityDefinition
@@ -27,19 +27,48 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
     return $this->definition;
   }
 
-  public function getSearchableAttributes(): array
+  public function getSettingsObject(): array
   {
-    return [];
-  }
-
-  public function getFilterableAttributes(): array
-  {
-    return [];
-  }
-
-  public function getSortableAttributes(): array
-  {
-    return [];
+    return [
+      'rankingRules' => [
+        'exactness',
+        'words',
+        'typo',
+        'proximity',
+        'attribute',
+        'sort',
+        'release_date:desc',
+        'rank:desc'
+      ],
+      'distinctAttribute' => 'objectID',
+      'searchableAttributes' => [
+        'objectID',
+        'productNumber',
+        'name',
+        'ean',
+        'manufacturer',
+        'categoryName',
+        'manufacturerNumber',
+        'options',
+        'price',
+        'description'
+      ],
+      'displayedAttributes' => [
+        'id',
+        'productNumber',
+        'name',
+        'active',
+        'stock',
+        'availableStock',
+        'price',
+        'manufacturer',
+        'categoryName',
+        'variation',
+        'options'
+      ],
+      'sortableAttributes' => [],
+      'synonyms' => []
+    ];
   }
 
 }

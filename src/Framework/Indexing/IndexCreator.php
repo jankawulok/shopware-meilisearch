@@ -22,12 +22,11 @@ class IndexCreator
   {
 
     $this->client->createIndex($index, [
-      'primaryKey' => $definition->getId(),
+      'primaryKey' => 'objectID',
+
     ]);
-    $this->client->updateIndex($index, [
-      'searchableAttributes' => $definition->getSearchableAttributes(),
-      'sortableAttributes' => $definition->getSortableAttributes(),
-      'filterableAttributes' => $definition->getFilterableAttributes(),
-    ]);
+    if ($settings = $definition->getSettingsObject()) {
+      $this->client->index($index)->updateSettings($settings);
+    }
   }
 }
