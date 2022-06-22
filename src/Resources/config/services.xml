@@ -40,6 +40,7 @@
     </service>
     <service id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductDefinition">
       <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductTransformer"/>
       <argument type="service" id="product.repository"/>
       <tag name="meilisearch.definition"/>
     </service>
@@ -50,6 +51,11 @@
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchHelper" />
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchRegistry" />
       <argument type="service" id="Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexer" />
+    </service>
+    <!-- Transformers -->
+    <service id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductTransformer">
+      <argument type="service" id="product.repository" />
+      <argument type="service" id="event_dispatcher" />
     </service>
   </services>
 </container>
