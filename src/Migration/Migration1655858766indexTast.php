@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Migration;
 
@@ -14,8 +16,8 @@ class Migration1655858766indexTast extends MigrationStep
 
     public function update(Connection $connection): void
     {
-      $connection->executeStatement(
-        '
+        $connection->executeStatement(
+            '
 CREATE TABLE `meilisearch_index_task` (
 `id` binary(16) NOT NULL,
 `index` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -27,11 +29,11 @@ CREATE TABLE `meilisearch_index_task` (
 PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     '
-    );
+        );
     }
 
     public function updateDestructive(Connection $connection): void
     {
-      $connection->executeStatement('DROP TABLE IF EXISTS meilisearch_index_task');
+        $connection->executeStatement('DROP TABLE IF EXISTS meilisearch_index_task');
     }
 }

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Framework\Product;
 
@@ -7,7 +9,6 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Event\ShopwareEvent;
 use Symfony\Contracts\EventDispatcher\Event;
 
-  
 class MeilisearchProductTransformEvent extends Event implements ShopwareEvent
 {
     /**

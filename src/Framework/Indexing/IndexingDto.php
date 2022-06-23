@@ -4,31 +4,31 @@ namespace Mdnr\Meilisearch\Framework\Indexing;
 
 class IndexingDto
 {
-  protected array $ids;
+    protected array $ids;
 
-  protected string $index;
+    protected string $index;
 
-  protected string $entity;
+    protected string $entity;
 
-  public function __construct(array $ids, string $index, string $entity)
-  {
-    $this->ids = array_values($ids);
-    $this->index = $index;
-    $this->entity = $entity;
-  }
+    public function __construct(array $ids, string $index, string $entity)
+    {
+        $this->ids = array_values($ids);
+        $this->index = $index;
+        $this->entity = $entity;
+    }
 
-  public function getIds(): array
-  {
-    return $this->ids;
-  }
+    public function getIds(): array
+    {
+        return $this->ids;
+    }
 
-  public function getIndex(): string
-  {
-    return $this->index;
-  }
+    public function getIndex(): string
+    {
+        return $this->index;
+    }
 
-  public function getEntity(): string
-  {
-    return $this->entity;
-  }
+    public function getEntity(): string
+    {
+        return $this->entity;
+    }
 }

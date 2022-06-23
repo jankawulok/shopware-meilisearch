@@ -12,55 +12,55 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 
 class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
 {
-  protected ProductDefinition $definition;
-  protected MeilisearchProductTransformer $transformer;
+    protected ProductDefinition $definition;
+    protected MeilisearchProductTransformer $transformer;
 
-  public function __construct(ProductDefinition $definition, MeilisearchProductTransformer $transformer)
-  {
-    $this->definition = $definition;
-    $this->transformer = $transformer;
-  }
+    public function __construct(ProductDefinition $definition, MeilisearchProductTransformer $transformer)
+    {
+        $this->definition = $definition;
+        $this->transformer = $transformer;
+    }
 
-  public function getId(): string
-  {
-    return 'id';
-  }
+    public function getId(): string
+    {
+        return 'id';
+    }
 
-  public function getEntityDefinition(): EntityDefinition
-  {
-    return $this->definition;
-  }
+    public function getEntityDefinition(): EntityDefinition
+    {
+        return $this->definition;
+    }
 
-  public function fetch($ids, Context $context): array
-  {
-    $criteria = (new Criteria($ids))
-      ->addAssociation('categoriesRo')
-      ->addAssociation('prices')
-      ->addAssociation('properties')
-      ->addAssociation('properties.group')
-      ->addAssociation('manufacturer')
-      ->addAssociation('tags')
-      ->addAssociation('configuratorSettings')
-      ->addAssociation('options')
-      ->addAssociation('options.group')
-      ->addAssociation('visibilities')
-      ->addAssociation('categories')
-      ->addAssociation('cover.media')
-      ->addAssociation('media')
-      ->addAssociation('seoUrls');
+    public function fetch($ids, Context $context): array
+    {
+        $criteria = (new Criteria($ids))
+        ->addAssociation('categoriesRo')
+        ->addAssociation('prices')
+        ->addAssociation('properties')
+        ->addAssociation('properties.group')
+        ->addAssociation('manufacturer')
+        ->addAssociation('tags')
+        ->addAssociation('configuratorSettings')
+        ->addAssociation('options')
+        ->addAssociation('options.group')
+        ->addAssociation('visibilities')
+        ->addAssociation('categories')
+        ->addAssociation('cover.media')
+        ->addAssociation('media')
+        ->addAssociation('seoUrls');
 
-    $context->setConsiderInheritance(true);
-    $entities = $this->repository->search($criteria, $context);
+        $context->setConsiderInheritance(true);
+        $entities = $this->repository->search($criteria, $context);
 
-    return array_map(function ($entity) use ($context) {
-      return $this->transformer->transform($entity, $context);
-    }, iterator_to_array($entities));
-  }
+        return array_map(function ($entity) use ($context) {
+            return $this->transformer->transform($entity, $context);
+        }, iterator_to_array($entities));
+    }
 
-  public function getSettingsObject(): array
-  {
-    return [
-      'rankingRules' => [
+    public function getSettingsObject(): array
+    {
+        return [
+        'rankingRules' => [
         'exactness',
         'words',
         'typo',
@@ -69,9 +69,9 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
         'sort',
         'release_date:desc',
         'rank:desc'
-      ],
-      'distinctAttribute' => 'objectID',
-      'searchableAttributes' => [
+        ],
+        'distinctAttribute' => 'objectID',
+        'searchableAttributes' => [
         'objectID',
         'productNumber',
         'name',
@@ -82,8 +82,8 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
         'options',
         'price',
         'description'
-      ],
-      'displayedAttributes' => [
+        ],
+        'displayedAttributes' => [
         'id',
         'productNumber',
         'name',
@@ -95,9 +95,9 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
         'categoryName',
         'variation',
         'options'
-      ],
-      'sortableAttributes' => [],
-      'synonyms' => []
-    ];
-  }
+        ],
+        'sortableAttributes' => [],
+        'synonyms' => []
+        ];
+    }
 }

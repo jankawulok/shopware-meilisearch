@@ -17,6 +17,7 @@ use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\System\Language\LanguageCollection;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\MessageQueue\Handler\AbstractMessageHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NandFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -27,121 +28,136 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 
 class MeilisearchIndexer extends AbstractMessageHandler
 {
-  private Connection $connection;
-  private MeilisearchHelper $helper;
-  private MeilisearchRegistry $registry;
-  private EntityRepositoryInterface $currencyRepository;
-  private EntityRepositoryInterface $languageRepository;
-  public function __construct(
-    Connection $connection,
-    IndexCreator $indexCreator,
-    IteratorFactory $iteratorFactory,
-    MeilisearchHelper $helper,
-    MeilisearchRegistry $registry,
-    Client $client,
-    LoggerInterface $logger,
-    EntityRepositoryInterface $currencyRepository,
-    EntityRepositoryInterface $languageRepository,
-    EventDispatcherInterface $eventDispatcher,
-    int $indexingBatchSize
-  ) {
-    $this->connection = $connection;
-    $this->helper = $helper;
-    $this->registry = $registry;
-    $this->indexCreator = $indexCreator;
-    $this->iteratorFactory = $iteratorFactory;
-    $this->client = $client;
-    $this->logger = $logger;
-    $this->currencyRepository = $currencyRepository;
-    $this->languageRepository = $languageRepository;
-    $this->eventDispatcher = $eventDispatcher;
-    $this->indexingBatchSize = $indexingBatchSize;
-  }
-
-  public function init(): IndexerOffset
-  {
-    $this->connection->executeStatement('DELETE FROM meilisearch_index_task');
-
-    $definitions = $this->registry->getDefinitions();
-    $languages = $this->getLanguages();
-
-    $currencies = $this->getCurrencies();
-
-    $timestamp = new \DateTime();
-
-    foreach ($languages as $language) {
-      $context = $this->createLanguageContext($language);
-
-      $context->addExtension('currencies', $currencies);
-
-      foreach ($definitions as $definition) {
-        $alias = $this->helper->getIndexName($definition->getEntityDefinition(), $language->getId());
-
-        $index = $alias . '_' . $timestamp->getTimestamp();
-
-        $this->indexCreator->createIndex($definition, $index, $alias, $context);
-
-        $iterator = $this->iteratorFactory->createIterator($definition->getEntityDefinition());
-
-        $this->connection->insert('meilisearch_index_task', [
-          'id' => Uuid::randomBytes(),
-          '`entity`' => $definition->getEntityDefinition()->getEntityName(),
-          '`index`' => $index,
-          '`alias`' => $alias,
-          '`doc_count`' => $iterator->fetchCount(),
-        ]);
-      }
+    private Connection $connection;
+    private MeilisearchHelper $helper;
+    private MeilisearchRegistry $registry;
+    private EntityRepositoryInterface $currencyRepository;
+    private EntityRepositoryInterface $languageRepository;
+    public function __construct(
+        Connection $connection,
+        IndexCreator $indexCreator,
+        IteratorFactory $iteratorFactory,
+        MeilisearchHelper $helper,
+        MeilisearchRegistry $registry,
+        Client $client,
+        LoggerInterface $logger,
+        EntityRepositoryInterface $currencyRepository,
+        EntityRepositoryInterface $languageRepository,
+        EventDispatcherInterface $eventDispatcher,
+        int $indexingBatchSize
+    ) {
+        $this->connection = $connection;
+        $this->helper = $helper;
+        $this->registry = $registry;
+        $this->indexCreator = $indexCreator;
+        $this->iteratorFactory = $iteratorFactory;
+        $this->client = $client;
+        $this->logger = $logger;
+        $this->currencyRepository = $currencyRepository;
+        $this->languageRepository = $languageRepository;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->indexingBatchSize = $indexingBatchSize;
     }
 
-    return new IndexerOffset(
-      $languages,
-      $definitions,
-      $timestamp->getTimestamp()
-    );
-  }
+    public function init(): IndexerOffset
+    {
+        $this->connection->executeStatement('DELETE FROM meilisearch_index_task');
 
-  public function handle($message): void
-  {
-    if (!$message instanceof MeilisearchIndexingMessage) {
-      return;
+        $definitions = $this->registry->getDefinitions();
+        $languages = $this->getLanguages();
+
+        $currencies = $this->getCurrencies();
+
+        $timestamp = new \DateTime();
+
+        foreach ($languages as $language) {
+            $context = $this->createLanguageContext($language);
+
+            $context->addExtension('currencies', $currencies);
+
+            foreach ($definitions as $definition) {
+                $alias = $this->helper->getIndexName($definition->getEntityDefinition(), $language->getId());
+
+                $index = $alias . '_' . $timestamp->getTimestamp();
+
+                $this->indexCreator->createIndex($definition, $index, $alias, $context);
+
+                $iterator = $this->iteratorFactory->createIterator($definition->getEntityDefinition());
+
+                $this->connection->insert('meilisearch_index_task', [
+                'id' => Uuid::randomBytes(),
+                '`entity`' => $definition->getEntityDefinition()->getEntityName(),
+                '`index`' => $index,
+                '`alias`' => $alias,
+                '`doc_count`' => $iterator->fetchCount(),
+                ]);
+            }
+        }
+
+        return new IndexerOffset(
+            $languages,
+            $definitions,
+            $timestamp->getTimestamp()
+        );
     }
-    if (!$this->heleper->allowIndexing()) {
-      return;
+
+    public function handle($message): void
+    {
+        if (!$message instanceof MeilisearchIndexingMessage) {
+            return;
+        }
+        if (!$this->heleper->allowIndexing()) {
+            return;
+        }
     }
-  }
-  public static function getHandledMessages(): iterable
-  {
-    return [
-      MeilisearchIndexingMessage::class,
-    ];
-  }
+    public static function getHandledMessages(): iterable
+    {
+        return [
+        MeilisearchIndexingMessage::class,
+        ];
+    }
 
-  private function createLanguageContext(LanguageEntity $language): Context
-  {
-    return new Context(
-      new SystemSource(),
-      [],
-      Defaults::CURRENCY,
-      array_filter([$language->getId(), $language->getParentId(), Defaults::LANGUAGE_SYSTEM])
-    );
-  }
-  private function getCurrencies(): EntitySearchResult
-  {
-    return $this->currencyRepository->search(new Criteria(), Context::createDefaultContext());
-  }
+    public function updateIds(EntityDefinition $definition, array $ids): void
+    {
+        // TODO: add config to disable indexin
 
-  private function getLanguages(): LanguageCollection
-  {
-    $context = Context::createDefaultContext();
-    $criteria = new Criteria();
-    $criteria->addFilter(new NandFilter([new EqualsFilter('salesChannels.id', null)]));
-    $criteria->addSorting(new FieldSorting('id'));
+        $message = $this->generateMessage($definition, $ids);
+        $task = $message->getData();
+        $entity = $task->getEntity();
 
-    /** @var LanguageCollection $languages */
-    $languages = $this->languageRepository
-      ->search($criteria, $context)
-      ->getEntities();
+        if (!$this->registry->has($entity)) {
+            return;
+        }
 
-    return $languages;
-  }
+        $this->handle($message);
+    }
+
+    private function createLanguageContext(LanguageEntity $language): Context
+    {
+        return new Context(
+            new SystemSource(),
+            [],
+            Defaults::CURRENCY,
+            array_filter([$language->getId(), $language->getParentId(), Defaults::LANGUAGE_SYSTEM])
+        );
+    }
+    private function getCurrencies(): EntitySearchResult
+    {
+        return $this->currencyRepository->search(new Criteria(), Context::createDefaultContext());
+    }
+
+    private function getLanguages(): LanguageCollection
+    {
+        $context = Context::createDefaultContext();
+        $criteria = new Criteria();
+        $criteria->addFilter(new NandFilter([new EqualsFilter('salesChannels.id', null)]));
+        $criteria->addSorting(new FieldSorting('id'));
+
+        /** @var LanguageCollection $languages */
+        $languages = $this->languageRepository
+        ->search($criteria, $context)
+        ->getEntities();
+
+        return $languages;
+    }
 }

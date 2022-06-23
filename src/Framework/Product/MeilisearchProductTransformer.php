@@ -9,25 +9,25 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 
 class MeilisearchProductTransformer
 {
-  protected EntityRepositoryInterface $productRepository;
-  protected EventDispatcherInterface $eventDispatcher;
+    protected EntityRepositoryInterface $productRepository;
+    protected EventDispatcherInterface $eventDispatcher;
 
-  public function __construct(EntityRepositoryInterface $productRepository, EventDispatcherInterface $eventDispatcher)
-  {
-    $this->productRepository = $productRepository;
-    $this->eventDispatcher = $eventDispatcher;
-  }
+    public function __construct(EntityRepositoryInterface $productRepository, EventDispatcherInterface $eventDispatcher)
+    {
+        $this->productRepository = $productRepository;
+        $this->eventDispatcher = $eventDispatcher;
+    }
 
-  public function transform(ProductEntity $productEntity, Context $context): array
-  {
-    $productDTO = [];
-    $this->eventDispatcher->dispatch(
-      new MeilisearchProductTransformEvent(
-        $productDTO,
-        $productEntity,
-        $context
-      )
-    );
-    return $productDTO;
-  }
+    public function transform(ProductEntity $productEntity, Context $context): array
+    {
+        $productDTO = [];
+        $this->eventDispatcher->dispatch(
+            new MeilisearchProductTransformEvent(
+                $productDTO,
+                $productEntity,
+                $context
+            )
+        );
+        return $productDTO;
+    }
 }
