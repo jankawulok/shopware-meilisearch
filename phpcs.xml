@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/squizlabs/PHP_CodeSniffer/3.4.1/phpcs.xsd">
+  <file>src</file>
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+  <exclude-pattern>tests/TestBootstrap.php</exclude-pattern>
+  <exclude-pattern>*/Resources/app/*</exclude-pattern>
+  <exclude-pattern>*/Resources/snippet/*</exclude-pattern>
+  <exclude-pattern>*/Resources/public/administration/*</exclude-pattern>
+
+  <arg name="colors"/>
+  <arg value="p"/>
+
+  <arg name="report-full"/>
+
+  <ini name="memory_limit" value="128M"/>
+
+  <rule ref="PSR2"/>
+  <rule ref="PSR12"/>
+
+  <rule ref="Generic.PHP.RequireStrictTypes" />
+  <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+  <rule ref="PSR12.Files.ImportStatement"/>
+  <rule ref="Squiz.Strings.ConcatenationSpacing">
+    <properties>
+      <property name="spacing" value="1" />
+    </properties>
+  </rule>
+  <rule ref="PSR2">
+    <exclude name="PSR2.ControlStructures.ControlStructureSpacing.SpacingAfterOpenBrace"/>
+  </rule>
+</ruleset>

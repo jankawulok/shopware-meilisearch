@@ -1,36 +1,44 @@
 {
-    "name": "madonair/meilisearch",
-    "version": "1.0.0",
-    "description": "Meilisearch integration",
-    "type": "shopware-platform-plugin",
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "Mdnr\\Meilisearch\\": "src/"
-        }
-    },
-    "extra": {
-        "shopware-plugin-class": "Mdnr\\Meilisearch\\Meilisearch",
-        "label": {
-            "de-DE": "Meilisearch",
-            "en-GB": "Meilisearch"
-        },
-        "description": {
-            "de-DE": "Meilisearch",
-            "en-GB": "Meilisearch integration for Shopware 6"
-        },
-        "manufacturerLink": {
-            "de-DE": "https://example.com",
-            "en-GB": "https://example.com"
-        },
-        "supportLink": {
-            "de-DE": "https://example.com/support",
-            "en-GB": "https://example.com/support"
-        }
-    },
-    "require": {
-      "shopware/core": "~6.4.0",
-      "shopware/administration": "~6.4.0",
-      "meilisearch/meilisearch-php": "^0.23.3"
+  "name": "madonair/meilisearch",
+  "version": "1.0.0",
+  "description": "Meilisearch integration",
+  "type": "shopware-platform-plugin",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Mdnr\\Meilisearch\\": "src/"
     }
+  },
+  "extra": {
+    "shopware-plugin-class": "Mdnr\\Meilisearch\\Meilisearch",
+    "label": {
+      "de-DE": "Meilisearch",
+      "en-GB": "Meilisearch"
+    },
+    "description": {
+      "de-DE": "Meilisearch",
+      "en-GB": "Meilisearch integration for Shopware 6"
+    },
+    "manufacturerLink": {
+      "de-DE": "https://example.com",
+      "en-GB": "https://example.com"
+    },
+    "supportLink": {
+      "de-DE": "https://example.com/support",
+      "en-GB": "https://example.com/support"
+    }
+  },
+  "require": {
+    "meilisearch/meilisearch-php": "^0.23.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "~3.0",
+    "symplify/easy-coding-standard": "^11.0",
+    "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "^3.7"
+  },
+  "scripts": {
+    "test": "../../../vendor/bin/phpunit -c phpunit.xml.dist --colors=always",
+    "lint": "./vendor/bin/phpcbf --standard=phpcs.xml src"
+  }
 }
