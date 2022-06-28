@@ -18,6 +18,7 @@ use Shopware\Core\System\Language\LanguageCollection;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexingMessage;
 use Shopware\Core\Framework\MessageQueue\Handler\AbstractMessageHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NandFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -78,18 +79,19 @@ class MeilisearchIndexer extends AbstractMessageHandler
             foreach ($definitions as $definition) {
                 $alias = $this->helper->getIndexName($definition->getEntityDefinition(), $language->getId());
 
-                $index = $alias . '_' . $timestamp->getTimestamp();
+                // $index = $alias . '_' . $timestamp->getTimestamp();
+                $index = $alias; //TODO: meilisearch does not support aliases yet
 
                 $this->indexCreator->createIndex($definition, $index, $alias, $context);
 
-                $iterator = $this->iteratorFactory->createIterator($definition->getEntityDefinition());
+                $iterator = $this->iteratorFactory->createIterator($definition->getEntityDefinition(), null, 500);
 
                 $this->connection->insert('meilisearch_index_task', [
-                'id' => Uuid::randomBytes(),
-                '`entity`' => $definition->getEntityDefinition()->getEntityName(),
-                '`index`' => $index,
-                '`alias`' => $alias,
-                '`doc_count`' => $iterator->fetchCount(),
+                    'id' => Uuid::randomBytes(),
+                    '`entity`' => $definition->getEntityDefinition()->getEntityName(),
+                    '`index`' => $index,
+                    '`alias`' => $alias,
+                    '`doc_count`' => $iterator->fetchCount(),
                 ]);
             }
         }
@@ -101,35 +103,145 @@ class MeilisearchIndexer extends AbstractMessageHandler
         );
     }
 
+    /**
+     * @param MeiliSearchIndexingMessage $message
+     */
     public function handle($message): void
     {
         if (!$message instanceof MeilisearchIndexingMessage) {
             return;
         }
-        if (!$this->heleper->allowIndexing()) {
+        if (!$this->helper->allowIndexing()) {
             return;
         }
+
+        $task = $message->getData();
+
+        $ids = $task->getIds();
+
+        $index = $task->getIndex();
+        $this->connection->executeStatement('UPDATE meilisearch_index_task SET `doc_count` = `doc_count` - :idCount WHERE `index` = :index', [
+            'idCount' => \count($ids),
+            'index' => $index,
+        ]);
+
+        if (!$this->client->index($index)->fetchRawInfo()) { // Check if index exists
+            return;
+        }
+        $entity = $task->getEntity();
+        $definition = $this->registry->get($entity);
+
+        $context = $message->getContext();
+        $context->addExtension('currencies', $this->getCurrencies());
+
+        if (!$definition) {
+            throw new \RuntimeException('Could not find definition for entity ' . $entity);
+        }
+
+        $data = $definition->fetch($ids, $context);
+
+        $toDelete =  array_filter($ids, fn (string $id) => !isset($data[$id]));
+
+        $documents = [];
+        foreach ($data as $id => $document) {
+            $documents[] = $document;
+        }
+        // echo(json_encode($documents, JSON_PRETTY_PRINT));
+   
+        $this->client->index($index)->updateDocuments($documents);
+        // $this->client->index($index)->deleteDocuments($toDelete);
     }
+
     public static function getHandledMessages(): iterable
     {
         return [
-        MeilisearchIndexingMessage::class,
+            MeilisearchIndexingMessage::class,
         ];
+    }
+
+    public function iterate($offset)
+    {
+        if (!$this->helper->allowIndexing()) {
+            return null;
+        }
+
+        if ($offset === null) {
+            $offset = $this->init();
+        }
+
+        if ($offset->getLanguageId() === null) {
+            return null;
+        }
+
+        $language = $this->getLanguageForId($offset->getLanguageId());
+
+        if (!$language) {
+            return null;
+        }
+
+        $context = $this->createLanguageContext($language);
+
+         $message = $this->createIndexingMessage($offset, $context);
+        if ($message) {
+            return $message;
+        }
+ 
+        if (!$offset->hasNextLanguage()) {
+            return null;
+        }
+ 
+         $offset->setNextLanguage();
+         $offset->resetDefinitions();
+         $offset->setLastId(null);
+ 
+         return $this->iterate($offset);
+    }
+
+    private function createIndexingMessage(IndexerOffset $offset, Context $context): ?MeilisearchIndexingMessage
+    {
+        $definition = $this->registry->get((string) $offset->getDefinition());
+
+        if (!$definition) {
+            throw new \RuntimeException('Could not find definition for entity ' . $offset->getDefinition());
+        }
+
+        $entity = $definition->getEntityDefinition()->getEntityName();
+
+        $iterator = $this->iteratorFactory->createIterator($definition->getEntityDefinition(), $offset->getLastId(), $this->indexingBatchSize);
+
+        $ids = $iterator->fetch();
+
+        if (!empty($ids)) {
+            $offset->setLastId($iterator->getOffset());
+
+            $alias = $this->helper->getIndexName($definition->getEntityDefinition(), (string) $offset->getLanguageId());
+
+            // $index = $alias . '_' . $offset->getTimestamp();
+            $index = $alias;
+
+            return new MeilisearchIndexingMessage(new IndexingDto(array_values($ids), $index, $entity), $offset, $context);
+        }
+
+        if (!$offset->hasNextDefinition()) {
+            return null;
+        }
     }
 
     public function updateIds(EntityDefinition $definition, array $ids): void
     {
-        // TODO: add config to disable indexin
 
-        $message = $this->generateMessage($definition, $ids);
-        $task = $message->getData();
-        $entity = $task->getEntity();
+        if (!$this->helper->allowIndexing()) {
+            return;
+        }
+        $messages = $this->generateMessages($definition, $ids);
 
-        if (!$this->registry->has($entity)) {
+        if (!$this->registry->has($definition->getEntityName())) {
             return;
         }
 
-        $this->handle($message);
+        foreach ($messages as $message) {
+            $this->handle($message);
+        }
     }
 
     private function createLanguageContext(LanguageEntity $language): Context
@@ -141,6 +253,38 @@ class MeilisearchIndexer extends AbstractMessageHandler
             array_filter([$language->getId(), $language->getParentId(), Defaults::LANGUAGE_SYSTEM])
         );
     }
+
+    private function generateMessages(EntityDefinition $definition, array $ids): array
+    {
+        $languages = $this->getLanguages();
+
+        $messages = [];
+        foreach ($languages as $language) {
+            $context = $this->createLanguageContext($language);
+
+            $alias = $this->helper->getIndexName($definition, $language->getId());
+
+            $indexing = new IndexingDto($ids, $alias, $definition->getEntityName());
+
+            $message = new MeilisearchIndexingMessage($indexing, null, $context);
+
+            $messages[] = $message;
+        }
+
+        return $messages;
+    }
+    private function getLanguageForId(string $languageId): ?LanguageEntity
+    {
+        $context = Context::createDefaultContext();
+        $criteria = new Criteria([$languageId]);
+
+        /** @var LanguageCollection $languages */
+        $languages = $this->languageRepository
+            ->search($criteria, $context);
+
+        return $languages->get($languageId);
+    }
+
     private function getCurrencies(): EntitySearchResult
     {
         return $this->currencyRepository->search(new Criteria(), Context::createDefaultContext());
@@ -155,8 +299,8 @@ class MeilisearchIndexer extends AbstractMessageHandler
 
         /** @var LanguageCollection $languages */
         $languages = $this->languageRepository
-        ->search($criteria, $context)
-        ->getEntities();
+            ->search($criteria, $context)
+            ->getEntities();
 
         return $languages;
     }

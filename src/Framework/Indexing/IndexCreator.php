@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Framework\Indexing;
 
@@ -20,7 +21,7 @@ class IndexCreator
     public function createIndex(AbstractMeilisearchDefinition $definition, string $index, string $alias, Context $context)
     {
         $this->client->createIndex($index, [
-        'primaryKey' => 'objectID',
+        'primaryKey' => 'id',
 
         ]);
         if ($settings = $definition->getSettingsObject()) {
