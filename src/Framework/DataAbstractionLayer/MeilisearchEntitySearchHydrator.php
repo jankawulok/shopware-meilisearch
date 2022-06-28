@@ -17,22 +17,19 @@ class MeilisearchEntitySearchHydrator extends AbstractMeilisearchSearchHydrator
         throw new DecorationPatternException(self::class);
     }
 
-    public function hydrate(EntityDefinition $definition, Criteria $criteria, Context $context, $result): IdSearchResult
+    public function hydrate(EntityDefinition $definition, Criteria $criteria, Context $context, array $result): IdSearchResult
     {
         $data = [];
-        foreach ($result->getHits() as $hit) {
+        foreach ($result['hits'] as $hit) {
             $id = $hit['id'];
 
             $data[$id] = [
                 'primaryKey' => $id,
-                'data' => array_merge(
-                    $hit['_source'] ?? [],
-                    ['id' => $id]
-                ),
+                'data' => $hit 
             ];
         }
 
-        $total = $result->getNbHits();
+        $total = $result['nbHits'];
         if ($criteria->useIdSorting()) {
             $data = $this->sortByIdArray($criteria->getIds(), $data);
         }

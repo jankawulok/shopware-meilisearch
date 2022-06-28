@@ -6,7 +6,9 @@ namespace Mdnr\Meilisearch\Framework\DataAbstractionLayer;
 
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\PriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\Filter;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
@@ -36,9 +38,19 @@ class CriteriaParser
 
         $field = $this->helper->getField($fieldName, $definition, $root, false);
 
-        // TODO: handle translated and price fields
+        if ($field instanceof TranslatedField) {
+            $ordered = [];
+            foreach ($parts as $part) {
+                $ordered[] = $part;
+            }
+            $parts = $ordered;
+        }
 
-        return $field;
+        if (!$field instanceof PriceField) {
+            return implode('.', $parts);
+        }
+
+        return implode('.', $parts);
     }
 
     public function parseSorting(FieldSorting $sorting, EntityDefinition $entity, Context $context): array
@@ -61,7 +73,9 @@ class CriteriaParser
 
     private function parseEqualsFilter(EqualsFilter $filter, EntityDefinition $definition, Context $context): string
     {
-        return '';
+        $fieldName = $this->buildAccessor($definition, $filter->getField(), $context);
+
+        return "{$fieldName} = {$filter->getValue()}";
     }
 
     private function parseRangeFilter(RangeFilter $filter, EntityDefinition $definition, Context $context): string
@@ -71,7 +85,15 @@ class CriteriaParser
 
     private function parseEqualsAnyFilter(EqualsAnyFilter $filter, EntityDefinition $definition, Context $context): string
     {
-        return '';
+        $fieldName = $this->buildAccessor($definition, $filter->getField(), $context);
+
+        $f = array_map(function ($val) use ($fieldName) {
+            return "{$fieldName} = {$val}";
+        }, array_values($filter->getValue()));
+
+        $glue = ' OR ';
+
+        return '('.implode($glue, $f).')';
     }
 
     private function parseContainsFilter(ContainsFilter $filter, EntityDefinition $definition, Context $context): string
@@ -83,14 +105,14 @@ class CriteriaParser
     {
         return '';
     }
-    
+
     private function parsePrefixFilter(PrefixFilter $filter, EntityDefinition $definition, Context $context): string
     {
         return '';
     }
-    
 
-    public function parseFilter(Filter $filter, EntityDefinition $definition, string $root, Context $context): BuilderInterface
+
+    public function parseFilter(Filter $filter, EntityDefinition $definition, string $root, Context $context)
     {
         switch (true) {
             case $filter instanceof NotFilter:

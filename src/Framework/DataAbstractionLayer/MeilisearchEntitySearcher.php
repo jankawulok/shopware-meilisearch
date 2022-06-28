@@ -57,7 +57,6 @@ class MeilisearchEntitySearcher implements EntitySearcherInterface
         $this->helper->addFilters($definition, $criteria, $search, $context);
         $this->helper->setLimit($criteria, $search);
         $this->helper->setOffset($criteria, $search);
-        // TODO add filters, terms, limit, offset
 
         return $search;
     }
