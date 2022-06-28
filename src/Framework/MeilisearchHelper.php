@@ -122,8 +122,6 @@ class MeilisearchHelper
         if (empty($queries)) {
             return;
         }
-
-       
     }
 
     public function addPostFilters(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
@@ -137,7 +135,6 @@ class MeilisearchHelper
                 $search->addFilter($f);
             }
         }
-       
     }
     
 

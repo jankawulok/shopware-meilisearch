@@ -118,7 +118,7 @@ class CriteriaParser
 
     private function parseRangeFilter(RangeFilter $filter, EntityDefinition $definition, Context $context): string
     {
-        //todo check if isCheapestPriceField 
+        //todo check if isCheapestPriceField
 
         $accessor = $this->buildAccessor($definition, $filter->getField(), $context);
         if ($filter->hasParameter(RangeFilter::GT)) {
@@ -161,11 +161,11 @@ class CriteriaParser
         foreach ($filter->getQueries() as $query) {
             if ($query->getField() === 'product.visibilities.visibility') {
                 if ($query instanceof RangeFilter && $query->hasParameter(RangeFilter::GTE)) {
-                    $comparator= '>=';
+                    $comparator = '>=';
                     $visibility = $query->getParameter(RangeFilter::GTE);
                 }
                 if ($query instanceof RangeFilter && $query->hasParameter(RangeFilter::GT)) {
-                    $comparator= '>';
+                    $comparator = '>';
                     $visibility = $query->getParameter(RangeFilter::GT);
                 }
             } elseif ($query->getField() === 'product.visibilities.salesChannelId') {
@@ -174,7 +174,7 @@ class CriteriaParser
                 $productAvailableFilters[] = $this->parseFilter($query, $definition, $definition->getEntityName(), $context);
             }
         }
-        if($salesChannelId) {
+        if ($salesChannelId) {
             $productAvailableFilters[] = "visibilities.{$salesChannelId} {$comparator} {$visibility}";
         }
         return '(' . implode(' ' . $filter->getOperator() . ' ', $productAvailableFilters) . ')';

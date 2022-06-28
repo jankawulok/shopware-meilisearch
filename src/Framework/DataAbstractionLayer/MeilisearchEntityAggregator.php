@@ -49,13 +49,13 @@ class MeilisearchEntityAggregator implements EntityAggregatorInterface
 
         $search = $this->createSearch($definition, $criteria, $context);
         $this->eventDispatcher->dispatch(
-            new MeilisearchEntityAggregatorSearchEvent( $search, $context, $definition, $criteria )
+            new MeilisearchEntityAggregatorSearchEvent($search, $context, $definition, $criteria)
         );
         try {
             $index = $this->helper->getIndexName($definition, $context->getLanguageId());
             $result = $this->client->index($index)->search(
                 $search->getQuery(),
-                $search->getParams() 
+                $search->getParams()
             )->getRaw();
         } catch (\Throwable $e) {
             $this->helper->logAndThrowException($e);

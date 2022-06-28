@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Framework\DataAbstractionLayer;
@@ -25,7 +26,7 @@ class MeilisearchEntitySearchHydrator extends AbstractMeilisearchSearchHydrator
 
             $data[$id] = [
                 'primaryKey' => $id,
-                'data' => $hit 
+                'data' => $hit
             ];
         }
 

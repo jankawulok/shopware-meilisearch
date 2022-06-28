@@ -17,7 +17,6 @@ use Mdnr\Meilisearch\Framework\DataAbstractionLayer\Event\MeilisearchEntitySearc
 
 class MeilisearchEntitySearcher implements EntitySearcherInterface
 {
-  
     public const RESULT_STATE = 'loaded-by-meilisearch';
     private Client $client;
 
@@ -49,12 +48,11 @@ class MeilisearchEntitySearcher implements EntitySearcherInterface
 
     private function createSearch(EntityDefinition $definition, Criteria $criteria, Context $context): Search
     {
-      $query = implode(' ', $criteria->getQueries());
-      
         $search = new Search();
         $this->helper->handleIds($definition, $criteria, $search, $context);
         $this->helper->addTerm($criteria, $search, $context, $definition);
         $this->helper->addFilters($definition, $criteria, $search, $context);
+        $this->helper->addPostFilters($definition, $criteria, $search, $context);
         $this->helper->setLimit($criteria, $search);
         $this->helper->setOffset($criteria, $search);
 
@@ -81,12 +79,11 @@ class MeilisearchEntitySearcher implements EntitySearcherInterface
             )
         );
 
-
         try {
             $index = $this->helper->getIndexName($definition, $context->getLanguageId());
             $result = $this->client->index($index)->search(
                 $search->getQuery(),
-                $search->getParams() 
+                $search->getParams()
             )->getRaw();
         } catch (\Throwable $e) {
             $this->helper->logAndThrowException($e);

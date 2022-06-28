@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Framework;
@@ -70,18 +71,10 @@ class Search
             'offset' => $this->getOffset(),
             'limit' => $this->getLimit(),
         ];
-        //     'offset' => $this->offset,
-        //     'limit' => $this->limit,
-        //     'facetsDistribution' => $this->facetsDistribution,
-        //     'attributesToRetrieve' => $this->attributesToRetrieve,
-        //     'attributesToCrop' => $this->attributesToCrop,
-        // ];
     }
 
     public function getFilters()
     {
         return implode(' AND ', $this->filters);
     }
-
-   
 }
