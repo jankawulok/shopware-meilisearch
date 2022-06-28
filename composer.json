@@ -1,7 +1,7 @@
 {
-  "name": "madonair/meilisearch",
+  "name": "madonair/shopware-meilisearch",
   "version": "1.0.0",
-  "description": "Meilisearch integration",
+  "description": "Meilisearch integration for Shopware 6",
   "type": "shopware-platform-plugin",
   "license": "MIT",
   "autoload": {
