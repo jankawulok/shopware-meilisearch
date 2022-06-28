@@ -140,16 +140,16 @@ class MeilisearchIndexer extends AbstractMessageHandler
 
         $data = $definition->fetch($ids, $context);
 
-        $toDelete =  array_filter($ids, fn (string $id) => !isset($data[$id]));
+        $toDelete =  array_values(array_filter($ids, fn (string $id) => !isset($data[$id])));
 
         $documents = [];
         foreach ($data as $id => $document) {
             $documents[] = $document;
         }
-        // echo(json_encode($documents, JSON_PRETTY_PRINT));
    
+
         $this->client->index($index)->updateDocuments($documents);
-        // $this->client->index($index)->deleteDocuments($toDelete);
+        $this->client->index($index)->deleteDocuments($toDelete);
     }
 
     public static function getHandledMessages(): iterable
