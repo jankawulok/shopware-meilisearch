@@ -29,6 +29,7 @@
     }
   },
   "require": {
+    "shopware/core": "*",
     "meilisearch/meilisearch-php": "^0.23.0"
   },
   "require-dev": {
@@ -39,6 +40,6 @@
   },
   "scripts": {
     "test": "../../../vendor/bin/phpunit -c phpunit.xml.dist --colors=always",
-    "lint": "./vendor/bin/phpcbf --standard=phpcs.xml src"
+    "lint": "./vendor/bin/phpcs --standard=phpcs.xml src"
   }
 }
