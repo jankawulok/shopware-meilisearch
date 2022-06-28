@@ -115,6 +115,30 @@ class MeilisearchHelper
             }
         }
     }
+
+    public function addQueries(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
+    {
+        $queries = $criteria->getQueries();
+        if (empty($queries)) {
+            return;
+        }
+
+       
+    }
+
+    public function addPostFilters(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
+    {
+        $filters = $criteria->getPostFilters();
+        if (empty($filters)) {
+            return;
+        }
+        foreach ($filters as $filter) {
+            if ($f = $this->parser->parseFilter($filter, $definition, $definition->getEntityName(), $context)) {
+                $search->addFilter($f);
+            }
+        }
+       
+    }
     
 
     public function logAndThrowException(\Throwable $exception): bool

@@ -26,6 +26,19 @@
       <argument type="service" id="event_dispatcher"/>
     </service>
 
+    <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntityAggregator"
+                 decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntityAggregatorInterface"
+                 decoration-priority="1000">
+                 <argument type="service" id="MeiliSearch\Client"/>
+                 <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntityAggregator.inner"/>
+
+            <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchHelper"/>
+            <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\AbstractMeilisearchAggregationHydrator"/>
+            <argument type="service" id="event_dispatcher"/>
+            <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntityAggregator.inner"/>
+
+        </service>
+
     <service id="Mdnr\Meilisearch\Framework\Product\ProductUpdater">
       <argument type="service" id="Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexer"/>
       <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>

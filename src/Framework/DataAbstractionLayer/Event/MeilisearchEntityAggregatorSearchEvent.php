@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Framework\DataAbstractionLayer\Event;
@@ -20,8 +21,12 @@ class MeilisearchEntityAggregatorSearchEvent extends Event implements ShopwareEv
 
     private Criteria $criteria;
 
-    public function __construct(Search $search, Context $context, EntityDefinition $definition, Criteria $criteria)
-    {
+    public function __construct(
+        Search $search,
+        Context $context,
+        EntityDefinition $definition,
+        Criteria $criteria
+    ) {
         $this->search = $search;
         $this->context = $context;
         $this->definition = $definition;
