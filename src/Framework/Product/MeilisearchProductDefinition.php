@@ -83,21 +83,13 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
         $documents = [];
 
         foreach ($data as $id => $item) {
-            $visibilities = array_filter(explode('|', $item['visibilities'] ?? ''));
-
-            $visibilities = array_map(function (string $text) {
-                [$visibility, $salesChannelId] = explode(',', $text);
-
-                return [
-                    'visibility' => $visibility,
-                    'salesChannelId' => $salesChannelId,
-                    '_count' => 1,
-                ];
-            }, $visibilities);
-
+            $visibilities = [];
+            foreach (array_filter(explode('|', $item['visibilities'] ?? '')) as $salesChannelVisibility) {
+                [$visibility, $salesChannelId] = explode(',', $salesChannelVisibility);
+                $visibilities[$salesChannelId] = (int)$visibility;
+            }
             $prices = [];
             $purchase = [];
-
             $purchasePrices = $this->priceFieldSerializer->decode($tmpField, $item['purchasePrices']);
             $price = $this->priceFieldSerializer->decode($tmpField, $item['price']);
 
@@ -138,6 +130,7 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
                 'manufacturerId' => $item['productManufacturerId'],
                 'manufacturer' => [
                     'id' => $item['productManufacturerId'],
+                    'name' => $item['productManufacturerName'],
                     '_count' => 1,
                 ],
                 'releaseDate' => isset($item['releaseDate']) ? (new \DateTime($item['releaseDate']))->format('c') : null,
@@ -190,6 +183,7 @@ SELECT
     p.product_number as productNumber,
     p.sales,
     LOWER(HEX(IFNULL(p.product_manufacturer_id, pp.product_manufacturer_id))) AS productManufacturerId,
+    pmt.name AS productManufacturerName,
     IFNULL(p.shipping_free, pp.shipping_free) AS shippingFree,
     IFNULL(p.is_closeout, pp.is_closeout) AS isCloseout,
     IFNULL(p.weight, pp.weight) AS weight,
@@ -215,6 +209,7 @@ SELECT
 
 FROM product p
     LEFT JOIN product pp ON(p.parent_id = pp.id AND pp.version_id = :liveVersionId)
+    LEFT JOIN product_manufacturer_translation pmt ON(IFNULL(p.product_manufacturer_id, pp.product_manufacturer_id) = pmt.product_manufacturer_id AND pmt.language_id = :languageId)
     LEFT JOIN product_visibility ON(product_visibility.product_id = p.visibilities AND product_visibility.product_version_id = :liveVersionId)
 
     LEFT JOIN (
@@ -395,7 +390,7 @@ SQL;
 
         return json_decode(JsonFieldSerializer::encodeJson($price), true);
     }
-    
+
     private function fetchPropertyGroups(array $propertyIds = []): array
     {
         $sql = 'SELECT LOWER(HEX(id)), LOWER(HEX(property_group_id)) FROM property_group_option WHERE id in (?)';
@@ -417,7 +412,7 @@ SELECT
 FROM custom_field_set_relation
     INNER JOIN custom_field ON(custom_field.set_id = custom_field_set_relation.set_id)
 WHERE custom_field_set_relation.entity_name = "product"
-') ;
+');
 
 
         return $mappings;
@@ -425,9 +420,25 @@ WHERE custom_field_set_relation.entity_name = "product"
 
     public function getSettingsObject(): array
     {
-        return [
+        $config =  [
             'distinctAttribute' => 'id',
+            'rankingRules' => [
+                "words",
+                "typo",
+                "attribute",
+                "proximity",
+                "sort",
+                "exactness",
+                "ratingAverage:desc",
+                "sales:desc",
+                "availableStock:desc",
+                "createdAt:desc"
+            ],
             'filterableAttributes' => [
+                '*',
+                '*.*',
+                'categoriesRo.id',
+                'manufacturerId',
                 'active',
                 'available',
                 'shippingFree',
@@ -436,13 +447,34 @@ WHERE custom_field_set_relation.entity_name = "product"
                 'id',
                 'parentId',
                 'propertyIds',
+                'optionIds',
                 'ratingAverage',
-                'price.*.*',
                 'productNumber',
                 'categoryName'
             ],
-            'searchableAttributes' => ['productNumber', 'name', 'ean', 'description', 'categoryName'],
+            'searchableAttributes' => ['productNumber', 'ean', 'name', 'manufacturer.name',  'categoryName', 'description',],
             'sortableAttributes' => ['name'],
         ];
+
+        $channelIds = $this->connection->fetchFirstColumn(
+            "SELECT DISTINCT LOWER(HEX(id)) FROM sales_channel WHERE active=1"
+        );
+
+        foreach ($channelIds as $id) {
+            $config['filterableAttributes'][] = "visibilities.{$id}";
+        }
+
+        $currencyIds = $this->connection->fetchFirstColumn(
+            "SELECT DISTINCT LOWER(HEX(currency_id)) FROM sales_channel_currency"
+        );
+
+        foreach ($currencyIds as $id) {
+            $config['filterableAttributes'][] = "price.c_{$id}.gross";
+            $config['filterableAttributes'][] = "price.c_{$id}.net";
+        }
+
+        return $config;
+
+
     }
 }
