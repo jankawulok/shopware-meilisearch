@@ -22,7 +22,7 @@ class ProductUpdater implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-        ProductIndexerEvent::class => 'upadte',
+        ProductIndexerEvent::class => 'update',
         ];
     }
 

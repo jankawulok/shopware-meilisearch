@@ -10,13 +10,13 @@
     </service>
 
     <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\AbstractMeilisearchSearchHydrator" class="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntitySearchHydrator"/>
-    
+
     <service id="Mdnr\Meilisearch\Framework\Product\ProductSearchBuilder" decorates="Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface" decoration-priority="-10000">
       <argument type="service" id="Mdnr\Meilisearch\Framework\Product\ProductSearchBuilder.inner"/>
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchHelper"/>
       <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
     </service>
-    
+
     <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntitySearcher" decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface" decoration-priority="1000">
       <argument type="service" id="MeiliSearch\Client"/>
       <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntitySearcher.inner"/>
@@ -26,7 +26,11 @@
       <argument type="service" id="event_dispatcher"/>
     </service>
 
-    <!-- Services -->
+    <service id="Mdnr\Meilisearch\Framework\Product\ProductUpdater">
+      <argument type="service" id="Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexer"/>
+      <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+      <tag name="kernel.event_subscriber"/>
+    </service>
     <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\AbstractMeilisearchAggregationHydrator" class="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntityAggregatorHydrator">
       <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>
     </service>
@@ -63,6 +67,7 @@
       <argument>%kernel.environment%</argument>
       <argument type="service" id="MeiliSearch\Client" />
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchRegistry"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\CriteriaParser"/>
       <argument type="service" id="logger"/>
     </service>
 
