@@ -7,9 +7,9 @@ class Search
 {
     private string $query;
 
-    private int $offset;
+    private int $offset = 0;
 
-    private int $limit;
+    private int $limit = 100;
 
     private array $filters;
 
@@ -37,14 +37,51 @@ class Search
     {
         return $this->query;
     }
+
+    public function setOffset($offset)
+    {
+        $this->offset = $offset;
+    }
+
+    public function getOffset()
+    {
+        return $this->offset;
+    }
+
+    public function setLimit($limit)
+    {
+        $this->limit = $limit;
+    }
+
+    public function getLimit()
+    {
+        return $this->limit;
+    }
     
     public function addFilter($filter)
     {
         $this->filters[] = $filter;
     }
 
+    public function getParams()
+    {
+        return [
+            'filter' => $this->getFilters(),
+            'offset' => $this->getOffset(),
+            'limit' => $this->getLimit(),
+        ];
+        //     'offset' => $this->offset,
+        //     'limit' => $this->limit,
+        //     'facetsDistribution' => $this->facetsDistribution,
+        //     'attributesToRetrieve' => $this->attributesToRetrieve,
+        //     'attributesToCrop' => $this->attributesToCrop,
+        // ];
+    }
+
     public function getFilters()
     {
-        return $this->filters;
+        return implode(' AND ', $this->filters);
     }
+
+   
 }

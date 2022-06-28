@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Mdnr\Meilisearch\Framework\DataAbstractionLayer\CriteriaParser;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 
 class MeilisearchHelper
@@ -20,22 +21,24 @@ class MeilisearchHelper
     private LoggerInterface $logger;
     
     private MeilisearchRegistry $registry;
+    
+    private CriteriaParser $parser;
 
     private bool $throwException;
 
-    public function __construct(string $environment, Client $client, MeilisearchRegistry $registry, LoggerInterface $logger)
+    public function __construct(string $environment, Client $client, MeilisearchRegistry $registry, CriteriaParser $parser, LoggerInterface $logger)
     {
         $this->environment = $environment;
         $this->client = $client;
         $this->registry = $registry;
+        $this->parser = $parser;
         $this->logger = $logger;
         $this->throwException = true;
     }
 
     public function isSearchEnabled(Context $context): bool
     {
-        return true;
-        // return (bool)$this->systemConfigService->get('Meilisearch.config.enabled', $context->getSalesChannelId());
+        return true; //TODO: move config to ConfigurationInterface
     }
 
     public function allowIndexing(): bool
@@ -74,6 +77,22 @@ class MeilisearchHelper
         }
     }
 
+    public function setLimit(Criteria $criteria, Search $search): void
+    {
+        $limit = $criteria->getLimit();
+        if ($limit) {
+            $search->setLimit($limit);
+        }
+    }
+
+    public function setOffset(Criteria $criteria, Search $search): void
+    {
+        $offset = $criteria->getOffset();
+        if ($offset) {
+            $search->setOffset($offset);
+        }
+    }
+
     public function addTerm(Criteria $criteria, Search $search, Context $context, EntityDefinition $definition): void
     {
         if (!$criteria->getTerm()) {
@@ -82,6 +101,21 @@ class MeilisearchHelper
 
         $search->setQuery($criteria->getTerm());
     }
+
+    public function addFilters(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
+    {
+        $filters = $criteria->getFilters();
+        if (empty($filters)) {
+            return;
+        }
+
+        foreach ($filters as $filter) {
+            if ($f = $this->parser->parseFilter($filter, $definition, $definition->getEntityName(), $context)) {
+                $search->addFilter($f);
+            }
+        }
+    }
+    
 
     public function logAndThrowException(\Throwable $exception): bool
     {
