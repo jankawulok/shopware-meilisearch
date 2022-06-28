@@ -5,19 +5,45 @@
 
   <services>
 
+    <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\CriteriaParser">
+      <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper"/>
+    </service>
+
+    <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\AbstractMeilisearchSearchHydrator" class="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntitySearchHydrator"/>
+    
+    <service id="Mdnr\Meilisearch\Framework\Product\ProductSearchBuilder" decorates="Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface" decoration-priority="-10000">
+      <argument type="service" id="Mdnr\Meilisearch\Framework\Product\ProductSearchBuilder.inner"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchHelper"/>
+      <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+    </service>
+    
+    <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntitySearcher" decorates="Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearcherInterface" decoration-priority="1000">
+      <argument type="service" id="MeiliSearch\Client"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntitySearcher.inner"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchHelper"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\CriteriaParser"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\AbstractMeilisearchSearchHydrator"/>
+      <argument type="service" id="event_dispatcher"/>
+    </service>
+
     <!-- Services -->
+    <service id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\AbstractMeilisearchAggregationHydrator" class="Mdnr\Meilisearch\Framework\DataAbstractionLayer\MeilisearchEntityAggregatorHydrator">
+      <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>
+    </service>
+
     <service id="Mdnr\Meilisearch\Framework\ClientFactory" public="true" lazy="true">
       <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
     </service>
+
     <service id="MeiliSearch\Client" public="true" lazy="true">
       <factory service="Mdnr\Meilisearch\Framework\ClientFactory" method="createClient" />
-
-
     </service>
+
     <service id="Mdnr\Meilisearch\Framework\Indexing\IndexCreator">
       <argument type="service" id="MeiliSearch\Client"/>
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchRegistry"/>
     </service>
+
     <service id="Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexer">
       <argument type="service" id="Doctrine\DBAL\Connection"/>
       <argument type="service" id="Mdnr\Meilisearch\Framework\Indexing\IndexCreator"/>
@@ -32,30 +58,38 @@
       <argument>100</argument>
       <tag name="messenger.message_handler"/>
     </service>
+
     <service id="Mdnr\Meilisearch\Framework\MeilisearchHelper" public="true">
-      <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+      <argument>%kernel.environment%</argument>
+      <argument type="service" id="MeiliSearch\Client" />
+      <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchRegistry"/>
+      <argument type="service" id="logger"/>
     </service>
+
     <service id="Mdnr\Meilisearch\Framework\MeilisearchRegistry">
       <argument type="tagged" tag="meilisearch.definition"/>
     </service>
+
     <service id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductDefinition">
+      <argument type="service" id="Doctrine\DBAL\Connection"/>
       <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-      <argument type="service" id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductTransformer"/>
       <argument type="service" id="product.repository"/>
+      <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer"/>
+      <argument type="service" id="Shopware\Core\Checkout\Cart\Price\CashRounding"/>
       <tag name="meilisearch.definition"/>
     </service>
+
     <!-- Commands -->
-    <service id="Mdnr\Meilisearch\Console\Command\MeilisearchCheckConnectionCommand">
+    <service id="Mdnr\Meilisearch\Console\Command\MeilisearchIndexingCommand">
       <tag name="console.command"/>
       <argument type="service" id="MeiliSearch\Client"/>
+      <argument type="service" id="Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexer"/>
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchHelper" />
-      <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchRegistry" />
-      <argument type="service" id="Mdnr\Meilisearch\Framework\Indexing\MeilisearchIndexer" />
     </service>
-    <!-- Transformers -->
-    <service id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductTransformer">
-      <argument type="service" id="product.repository" />
-      <argument type="service" id="event_dispatcher" />
+
+    <service id="Mdnr\Meilisearch\Console\Command\MeilisearchStatusCommand">
+      <tag name="console.command"/>
+      <argument type="service" id="MeiliSearch\Client"/>
     </service>
   </services>
 </container>
