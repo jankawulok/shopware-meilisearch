@@ -27,6 +27,7 @@ class Search
     {
         $this->query = $query;
         $this->filters = [];
+        $this->facetsDistribution = [];
     }
 
     public function setQuery($query)
@@ -63,11 +64,20 @@ class Search
     {
         $this->filters[] = $filter;
     }
+    public function addFacetsDistribution($facetsDistribution)
+    {
+        $this->facetsDistribution[] = $facetsDistribution;
+    }
+    public function getFacetsDistributions()
+    {
+        return $this->facetsDistribution;
+    }
 
     public function getParams()
     {
         return [
             'filter' => $this->getFilters(),
+            'facetsDistribution' => $this->getFacetsDistributions(),
             'offset' => $this->getOffset(),
             'limit' => $this->getLimit(),
         ];
