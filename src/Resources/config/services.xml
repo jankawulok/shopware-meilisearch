@@ -91,7 +91,7 @@
     <service id="Mdnr\Meilisearch\Framework\Product\MeilisearchProductDefinition">
       <argument type="service" id="Doctrine\DBAL\Connection"/>
       <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-      <argument type="service" id="product.repository"/>
+      <argument type="service" id="media.repository"/>
       <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\PriceFieldSerializer"/>
       <argument type="service" id="Shopware\Core\Checkout\Cart\Price\CashRounding"/>
       <tag name="meilisearch.definition"/>

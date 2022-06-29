@@ -8,12 +8,14 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Context;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\Checkout\Cart\Price\CashRounding;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\System\CustomField\CustomFieldTypes;
 use Mdnr\Meilisearch\Framework\AbstractMeilisearchDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\PriceField;
@@ -31,17 +33,17 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
     private const PRODUCT_CUSTOM_FIELDS = ['product_translation.translation.custom_fields', 'product_translation.translation.fallback_1.custom_fields', 'product_translation.translation.fallback_2.custom_fields'];
 
     protected ProductDefinition $definition;
-    protected EntityRepositoryInterface $repository;
+    protected EntityRepositoryInterface $mediaRepository;
     private Connection $connection;
     private PriceFieldSerializer $priceFieldSerializer;
     private CashRounding $rounding;
     private ?array $customFieldsTypes = null;
 
-    public function __construct(Connection $connection, ProductDefinition $definition, EntityRepositoryInterface $repository, PriceFieldSerializer $priceFieldSerializer, CashRounding $rounding)
+    public function __construct(Connection $connection, ProductDefinition $definition, EntityRepositoryInterface $mediaRepository, PriceFieldSerializer $priceFieldSerializer, CashRounding $rounding)
     {
         $this->connection = $connection;
         $this->definition = $definition;
-        $this->repository = $repository;
+        $this->mediaRepository = $mediaRepository;
         $this->priceFieldSerializer = $priceFieldSerializer;
         $this->rounding = $rounding;
     }
@@ -81,8 +83,13 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
         $tmpField = new PriceField('purchasePrices', 'purchasePrices');
 
         $documents = [];
+        $coverIds = array_map(function ($row) {
+            return $row['coverId'];
+        }, $data);
 
+        $media = $this->mediaRepository->search(new Criteria($coverIds), $context)->getElements();
         foreach ($data as $id => $item) {
+
             $visibilities = [];
             foreach (array_filter(explode('|', $item['visibilities'] ?? '')) as $salesChannelVisibility) {
                 [$visibility, $salesChannelId] = explode(',', $salesChannelVisibility);
@@ -108,6 +115,7 @@ class MeilisearchProductDefinition extends AbstractMeilisearchDefinition
             $document = [
                 'id' => $id,
                 'name' => $this->stripText($item['name'] ?? ''),
+                'coverId' => $item['coverId'] ? $media[$item['coverId']]->getUrl() : null,
                 'ratingAverage' => (float) $item['ratingAverage'],
                 'active' => (bool) $item['active'],
                 'available' => (bool) $item['available'],
@@ -197,6 +205,7 @@ SELECT
     IFNULL(p.property_ids, pp.property_ids) AS propertyIds,
     IFNULL(p.tag_ids, pp.tag_ids) AS tagIds,
     LOWER(HEX(IFNULL(p.tax_id, pp.tax_id))) AS taxId,
+    LOWER(HEX(product_media.media_id)) AS coverId,
     IFNULL(p.stock, pp.stock) AS stock,
     p.purchase_prices as purchasePrices,
     p.price as price,
@@ -211,6 +220,7 @@ FROM product p
     LEFT JOIN product pp ON(p.parent_id = pp.id AND pp.version_id = :liveVersionId)
     LEFT JOIN product_manufacturer_translation pmt ON(IFNULL(p.product_manufacturer_id, pp.product_manufacturer_id) = pmt.product_manufacturer_id AND pmt.language_id = :languageId)
     LEFT JOIN product_visibility ON(product_visibility.product_id = p.visibilities AND product_visibility.product_version_id = :liveVersionId)
+    LEFT JOIN product_media ON(IFNULL(p.cover, pp.cover) = product_media.id AND product_media.product_version_id = :liveVersionId )
 
     LEFT JOIN (
         :productTranslationQuery:
