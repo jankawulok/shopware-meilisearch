@@ -1,0 +1,17 @@
+meilisearch:
+    enabled: "%env(bool:MDNR_MS_ENABLED)%"
+    indexing_enabled: "%env(bool:MDNR_MS_INDEXING_ENABLED)%" 
+    host: "%env(string:MDNR_MS_HOST)%"
+    master_key: "%env(string:MDNR_MS_MASTER_KEY)%"
+    index_prefix: "%env(string:MDNR_MS_INDEX_PREFIX)%"
+    throw_exception: "%env(string:MDNR_MS_THROW_EXCEPTION)%"
+    indexing_batch_size: "%env(int:MDNR_MS_INDEXING_BATCH_SIZE)%"
+
+parameters:
+    env(MDNR_MS_ENABLED): ""
+    env(MDNR_MS_INDEXING_ENABLED): ""
+    env(MDNR_MS_HOST): ""
+    env(MDNR_MS_MASTER_KEY): ""
+    env(MDNR_MS_INDEX_PREFIX): "sw"
+    env(MDNR_MS_THROW_EXCEPTION): ""
+    env(MDNR_MS_INDEXING_BATCH_SIZE): 100

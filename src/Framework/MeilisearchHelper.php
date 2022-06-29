@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Mdnr\Meilisearch\Framework;
 
+use Exception;
 use MeiliSearch\Client;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
@@ -19,30 +20,58 @@ class MeilisearchHelper
     private string $environment;
 
     private LoggerInterface $logger;
-    
+
     private MeilisearchRegistry $registry;
-    
+
     private CriteriaParser $parser;
+
+    private bool $searchEnabled;
+
+    private bool $indexingEnabled;
 
     private bool $throwException;
 
-    public function __construct(string $environment, Client $client, MeilisearchRegistry $registry, CriteriaParser $parser, LoggerInterface $logger)
-    {
+    public function __construct(
+        string $environment,
+        bool $searchEnabled,
+        bool $indexingEnabled,
+        string $prefix,
+        bool $throwException,
+        Client $client,
+        MeilisearchRegistry $registry,
+        CriteriaParser $parser,
+        LoggerInterface $logger
+    ) {
+        $this->searchEnabled = $searchEnabled;
+        $this->indexingEnabled = $indexingEnabled;
+        $this->prefix = $prefix;
         $this->environment = $environment;
         $this->client = $client;
         $this->registry = $registry;
         $this->parser = $parser;
         $this->logger = $logger;
-        $this->throwException = true;
+        $this->throwException = $throwException;
     }
 
-    public function isSearchEnabled(Context $context): bool
+    public function allowSearch(EntityDefinition $definition, Context $context): bool
     {
-        return true; //TODO: move config to ConfigurationInterface
+        $entityName = $definition->getEntityName();
+
+        return $this->searchEnabled
+            && $this->registry->has($entityName)
+            && $context->hasState(Context::STATE_ELASTICSEARCH_AWARE);
     }
 
     public function allowIndexing(): bool
     {
+        if (!$this->indexingEnabled) {
+            return false;
+        }
+
+        if (!$this->client->getKeys()) {
+            return $this->logAndThrowException(new \Exception('Meilisearch client is not configured'));
+        }
+
         return true;
     }
 
@@ -116,12 +145,34 @@ class MeilisearchHelper
         }
     }
 
+    public function addAggregations(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
+    {
+        $aggregations = $criteria->getAggregations();
+        if (empty($aggregations)) {
+            return;
+        }
+
+        // die(var_dump($aggregations));
+        foreach ($aggregations as $aggregation) {
+            $agg = $this->parser->parseAggregation($aggregation, $definition, $context);
+
+            if (!$agg) {
+                continue;
+            }
+
+            $search->addFacetsDistribution($agg);
+            // die(var_dump($search->getFacetsDistributions()));
+        }
+    }
+
     public function addQueries(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
     {
+        //
         $queries = $criteria->getQueries();
         if (empty($queries)) {
             return;
         }
+        die(var_dump($criteria->getQueries()));
     }
 
     public function addPostFilters(EntityDefinition $definition, Criteria $criteria, Search $search, Context $context): void
@@ -136,7 +187,7 @@ class MeilisearchHelper
             }
         }
     }
-    
+
 
     public function logAndThrowException(\Throwable $exception): bool
     {
@@ -151,22 +202,5 @@ class MeilisearchHelper
         }
 
         return false;
-    }
-
-    public function allowSearch(EntityDefinition $definition, Context $context): bool
-    {
-        if (!$this->isSearchEnabled($context)) {
-            return false;
-        }
-
-        if (!$this->isSupported($definition)) {
-            return false;
-        }
-
-        if (!$context->hasState(Context::STATE_ELASTICSEARCH_AWARE)) {
-            return false;
-        }
-
-        return true;
     }
 }

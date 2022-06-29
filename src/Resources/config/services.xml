@@ -49,7 +49,8 @@
     </service>
 
     <service id="Mdnr\Meilisearch\Framework\ClientFactory" public="true" lazy="true">
-      <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+      <argument>%meilisearch.host%</argument>
+      <argument>%meilisearch.master_key%</argument>
     </service>
 
     <service id="MeiliSearch\Client" public="true" lazy="true">
@@ -78,6 +79,10 @@
 
     <service id="Mdnr\Meilisearch\Framework\MeilisearchHelper" public="true">
       <argument>%kernel.environment%</argument>
+      <argument>%meilisearch.enabled%</argument>
+      <argument>%meilisearch.indexing_enabled%</argument>
+      <argument>%meilisearch.index_prefix%</argument>
+      <argument>%meilisearch.throw_exception%</argument>
       <argument type="service" id="MeiliSearch\Client" />
       <argument type="service" id="Mdnr\Meilisearch\Framework\MeilisearchRegistry"/>
       <argument type="service" id="Mdnr\Meilisearch\Framework\DataAbstractionLayer\CriteriaParser"/>

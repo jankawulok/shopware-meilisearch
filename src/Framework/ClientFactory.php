@@ -5,22 +5,24 @@ declare(strict_types=1);
 namespace Mdnr\Meilisearch\Framework;
 
 use MeiliSearch\Client;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class ClientFactory
 {
-    private SystemConfigService $systemConfigService;
+    private string $host;
+    
+    private string $masterKey;
 
-    public function __construct(SystemConfigService $systemConfigService)
+    public function __construct(string $host, string $masterKey)
     {
-        $this->systemConfigService = $systemConfigService;
+        $this->host = $host;
+        $this->masterKey = $masterKey;
     }
 
     public function createClient(): Client
     {
         return new Client(
-            $this->systemConfigService->get('Meilisearch.config.urlEndpoint'),
-            $this->systemConfigService->get('Meilisearch.config.masterKey')
+            $this->host,
+            $this->masterKey
         );
     }
 }
